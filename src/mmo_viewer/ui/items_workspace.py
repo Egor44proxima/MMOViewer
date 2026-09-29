@@ -19,8 +19,8 @@ from PySide6.QtWidgets import (
 
 from mmo_viewer.core.item_projection import (
     ItemViewColumn,
-    build_item_view_columns,
     item_column_value,
+    split_item_view_columns,
 )
 from mmo_viewer.core.models import Severity, ValidationResult
 
@@ -30,8 +30,6 @@ ItemStatusProvider = Callable[[int], tuple[str, Severity | None, str]]
 
 class ItemsWorkspace(QWidget):
     """Two-pane Items view with frozen operational columns and scrollable detail fields."""
-
-    OPERATIONAL_COLUMN_COUNT = 7
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -49,17 +47,18 @@ class ItemsWorkspace(QWidget):
 
         self.operational_table = self._make_table()
         self.operational_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.operational_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.operational_table.setMinimumWidth(860)
         splitter.addWidget(self.operational_table)
 
-        right = QWidget()
-        right_layout = QVBoxLayout(right)
-        right_layout.setContentsMargins(8, 0, 0, 0)
-        right_layout.setSpacing(8)
-
         self.detail_table = self._make_table()
         self.detail_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        right_layout.addWidget(self.detail_table, 1)
+        self.detail_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        splitter.addWidget(self.detail_table)
+
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([900, 700])
 
         inspector = QFrame()
         inspector.setFrameShape(QFrame.Shape.StyledPanel)
@@ -81,11 +80,7 @@ class ItemsWorkspace(QWidget):
         self.inspector_value.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
         inspector_layout.addWidget(self.inspector_value)
 
-        right_layout.addWidget(inspector)
-        splitter.addWidget(right)
-        splitter.setStretchFactor(0, 0)
-        splitter.setStretchFactor(1, 1)
-        splitter.setSizes([900, 700])
+        root.addWidget(inspector)
 
         self._wire_sync()
 
@@ -122,17 +117,20 @@ class ItemsWorkspace(QWidget):
     def _sync_row(self, row: int, target: QTableWidget) -> None:
         if self._syncing_selection or row < 0 or row >= target.rowCount():
             return
+        if target.columnCount() == 0:
+            return
         self._syncing_selection = True
         try:
+            current_col = target.currentColumn()
+            target.setCurrentCell(row, current_col if current_col >= 0 else 0)
             target.selectRow(row)
         finally:
             self._syncing_selection = False
 
     def render(self, result: ValidationResult, status_provider: ItemStatusProvider) -> None:
         self._result = result
-        columns = build_item_view_columns(result.mmo)
-        operational = columns[: self.OPERATIONAL_COLUMN_COUNT]
-        self._detail_columns = columns[self.OPERATIONAL_COLUMN_COUNT :]
+        operational, detail = split_item_view_columns(result.mmo)
+        self._detail_columns = detail
 
         self._render_operational(result, operational, status_provider)
         self._render_detail(result, self._detail_columns)
