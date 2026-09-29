@@ -26,7 +26,9 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - validate line totals and VAT-aware document totals;
 - tabs: `Накладна` / `Товари` / `Діагностика` / `RAW`;
 - keep `№ / Статус / Morion ID / УКТ ЗЕД / Товар / Од. / К-сть / Ціна / Сума` frozen on the left while detail fields scroll horizontally on the right;
-- for unsupported layouts, show all physical ITEM fields only as generic `Fxx · RAW` columns without assigning business semantics;\n- synchronize row selection and vertical scrolling between frozen/detail panes;\n- show the selected detail/RAW field in a dedicated inspector with row, physical field number, classification and full value;
+- for unsupported layouts, show all physical ITEM fields only as generic `Fxx · RAW` columns without assigning business semantics;
+- synchronize row selection and vertical scrolling between frozen/detail panes;
+- show the selected detail/RAW field in a dedicated inspector with row, physical field number, classification and full value;
 - explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;
 - run profile-specific field, Morion/UKTZED and totals semantics only for a structurally supported document-wide layout;
 - reject mixed legacy/production ITEM layouts within one document;
