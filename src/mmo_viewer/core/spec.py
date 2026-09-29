@@ -14,7 +14,7 @@ class FieldType(str, Enum):
 class FieldSpec:
     name: str
     field_type: FieldType
-    width: int
+    width: int | None
     decimals: int = 0
     hint: str = ""
 
@@ -50,6 +50,8 @@ COMMENT_FIELDS = (
     FieldSpec("Коментар", FieldType.STRING, 200),
 )
 
+LEGACY_ITEM_FIELD_COUNT = 21
+
 ITEM_FIELDS = (
     FieldSpec("ID товару", FieldType.STRING, 20),
     FieldSpec("Найменування товару", FieldType.STRING, 100),
@@ -72,7 +74,15 @@ ITEM_FIELDS = (
     FieldSpec("% націнки постачальника", FieldType.NUMBER, 6, 2),
     FieldSpec("Ціна відпускна", FieldType.NUMBER, 16, 4),
     FieldSpec("Сума відпускна", FieldType.NUMBER, 16, 4),
+    FieldSpec(
+        "Код УКТ ЗЕД",
+        FieldType.STRING,
+        None,
+        hint="Production v3 extension: field 22. Maximum width is not yet established.",
+    ),
 )
+
+PRODUCTION_ITEM_FIELD_COUNT = len(ITEM_FIELDS)
 
 EXPECTED_SIGNATURE = "РАСХОДНАЯ_НАКЛАДНАЯ"
 EXPECTED_VERSION = "версия_3"

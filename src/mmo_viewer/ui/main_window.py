@@ -121,8 +121,8 @@ class MainWindow(QMainWindow):
         return container
 
     def _build_items_table(self) -> QTableWidget:
-        table = QTableWidget(0, 8)
-        table.setHorizontalHeaderLabels(["№", "Статус", "Morion ID", "Товар", "Од.", "К-сть", "Ціна", "Сума"])
+        table = QTableWidget(0, 9)
+        table.setHorizontalHeaderLabels(["№", "Статус", "Morion ID", "УКТ ЗЕД", "Товар", "Од.", "К-сть", "Ціна", "Сума"])
         table.setAlternatingRowColors(True)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -130,8 +130,10 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-        for i in range(4, 8):
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
+        for i in range(3, 4):
+            header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+        for i in range(5, 9):
             header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
         return table
 
@@ -263,6 +265,7 @@ class MainWindow(QMainWindow):
             values = [
                 str(row + 1), status,
                 f[4] if len(f) > 4 else "",
+                f[21] if len(f) > 21 else "",
                 f[1] if len(f) > 1 else "",
                 f[14] if len(f) > 14 else "",
                 f[15] if len(f) > 15 else "",

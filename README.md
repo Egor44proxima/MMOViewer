@@ -11,16 +11,21 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - pytest
 - GitHub Actions
 
-## Current scope (v0.1 foundation)
+## Current scope (MMO-2.1 calibration)
 
 - open `.mmo` via dialog or Drag & Drop;
 - detect/preview CP1251 and UTF-8 files;
-- preserve empty and trailing TAB fields;
+- preserve empty and trailing TAB fields as RAW evidence;
 - parse 4 MMO sections;
-- validate the documented 4 / 17 / 1 / 21 legacy contract;
-- validate signature/version, max widths, dates and numbers;
-- basic business diagnostics (sync method, totals);
+- support the documented legacy `4 / 17 / 1 / 21` contract;
+- support the observed production v3 item extension with field 22 = `Код УКТ ЗЕД`;
+- accept one terminal empty TAB field for observed production Header/Item records without discarding it from RAW;
+- treat whitespace-only numeric values as empty;
+- validate signature/version, dates and numbers;
+- report documented legacy width overruns as warnings rather than hard structural errors;
+- validate line totals and VAT-aware document totals;
 - tabs: Invoice / Items / Diagnostics / RAW;
+- show UKTZED in the Items table;
 - read-only: the source MMO is never modified.
 
 ## Windows development environment
@@ -66,4 +71,4 @@ The default branch is `main`. Feature/fix work should be done on dedicated branc
 
 See `docs/MMO_FORMAT_V1.md` and `docs/SOURCE_NOTES.md`.
 
-The current legacy format contract is based on the supplied ANR HTA description. Real-world MMO variants may extend that contract; unsupported/extended layouts must be investigated before being classified as format errors.
+The legacy contract is based on the supplied ANR HTA description. Production extensions are accepted only when supported by observed MMO evidence and regression tests. Unsupported layouts must still be investigated before being classified as format errors.
