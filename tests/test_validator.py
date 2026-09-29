@@ -186,6 +186,16 @@ def test_problematic_18_24_layout_is_not_accepted_as_valid_profile():
     assert "MMO_UNCONFIRMED_18_24_LAYOUT" in codes(result)
     assert "MMO_DOCUMENT_FIELD_COUNT" in codes(result)
     assert "MMO_ITEM_FIELD_COUNT" in codes(result)
+    assert "MMO_MORION_ID_MISSING" not in codes(result)
+    assert "MMO_MORION_ID_DUPLICATE" not in codes(result)
+    assert "MMO_ITEM_TOTAL_MISMATCH" not in codes(result)
+    assert "MMO_DOCUMENT_NET_TOTAL_MISMATCH" not in codes(result)
+    assert "MMO_DOCUMENT_GROSS_TOTAL_MISMATCH" not in codes(result)
+    assert not [
+        d for d in result.diagnostics
+        if d.section == "ITEM"
+        and d.code in {"MMO_FIELD_WIDTH_LEGACY", "MMO_INVALID_NUMBER", "MMO_DECIMAL_SCALE"}
+    ]
 
 
 def test_mixed_supported_item_layouts_are_rejected_document_wide():
