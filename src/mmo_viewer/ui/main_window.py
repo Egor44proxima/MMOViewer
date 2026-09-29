@@ -24,7 +24,14 @@ from PySide6.QtWidgets import (
 )
 
 from mmo_viewer.core.models import Diagnostic, Severity, ValidationResult
-from mmo_viewer.core.spec import (\n    HEADER_FIELDS,\n    document_specs_for,\n    is_extended_document,\n    item_gtin_field_index,\n    item_morion_field_index,\n    item_uktzed_field_index,\n)
+from mmo_viewer.core.spec import (
+    HEADER_FIELDS,
+    document_specs_for,
+    is_extended_document,
+    item_gtin_field_index,
+    item_morion_field_index,
+    item_uktzed_field_index,
+)
 from mmo_viewer.core.validator import open_and_validate
 
 
@@ -131,9 +138,9 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
-        for i in range(3, 4):
+        for i in range(3, 5):
             header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
-        for i in range(5, 9):
+        for i in range(6, 10):
             header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
         return table
 
