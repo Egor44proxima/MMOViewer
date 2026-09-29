@@ -70,3 +70,10 @@ MMO-3 does not add a new production format. It converts already confirmed eviden
 The problematic 18/24 file is deliberately absent from the supported registry. Its role remains negative/investigation evidence only.
 
 The parser itself remains independent of the registry so future files can always be opened and inspected in RAW even when no supported profile matches.
+
+
+## MMO-3.1 Items projection
+
+MMO-3.1 is a UI/read-model enhancement only. It does not introduce or confirm any new MMO field semantics.
+
+Confirmed profiles expose all their semantic Item fields in the table. Unsupported samples remain unsupported; their physical fields may be displayed as generic RAW columns strictly for investigation.
