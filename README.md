@@ -26,7 +26,8 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - validate line totals and VAT-aware document totals;
 - tabs: Invoice / Items / Diagnostics / RAW;
 - show UKTZED in the Items table;
-- explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;\n- read-only: the source MMO is never modified.
+- explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;
+- read-only: the source MMO is never modified.
 
 ## Windows development environment
 
