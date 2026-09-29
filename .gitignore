@@ -1,22 +1,10 @@
-# Python
+.mamba/
 __pycache__/
-*.py[cod]
+*.pyc
 .pytest_cache/
 .coverage
-htmlcov/
-
-# Local micromamba runtime/environment
-.mamba/
-
-# IDE
+dist/
+build/
+*.spec
 .vscode/
 .idea/
-
-# Build/release
-build/
-dist/
-*.spec
-
-# OS
-Thumbs.db
-.DS_Store
