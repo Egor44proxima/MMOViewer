@@ -50,55 +50,42 @@ def _production_v3_bytes(*, gross: str = "107.00", extra_tail: str = "") -> byte
     return text.encode("cp1251")
 
 
-def _extended_production_v3_bytes(*, gross: str = "0.11", duplicate_morion: bool = False) -> bytes:
-    header = "РАСХОДНАЯ_НАКЛАДНАЯ\t31816235\t2989010104\tверсия_3"
+def _problematic_18_24_bytes() -> bytes:
+    header = "РАСХОДНАЯ_НАКЛАДНАЯ\t12345678\t87654321\tверсия_3"
     document = (
-        "11-U-TEST\t28.09.2026\t1904510\tТестовий постачальник\tТестовий банк\t"
-        "26002146146001\t305299\t(056) 000-00-00\tДніпро\t\t\t"
-        "0.10\t"
-        + gross
-        + "\t02.10.2026\t0\t3\t2\tДоговір поставки №1 від 18.01.24"
+        "INV-PROBLEM\t28.09.2026\t0\tТестовий постачальник\tБанк\t"
+        "26000000000000\t300000\t(044) 000-00-00\tКиїв\t\t\t"
+        "100.00\t107.00\t30.09.2026\t0\t3\t2\tДодаткове поле"
     )
-    comment = "Synthetic extended production v3 fixture"
-
-    def item(gtin: str, morion: str, uktzed: str) -> str:
-        fields = [
-            "203.0128",
-            "Тестовий товар",
-            "4637",
-            "Тестовий виробник",
-            gtin,
-            "UA/TEST/01/01",
-            "21.02.2017",
-            "01.01.2099",
-            "7",
-            "",
-            "SER-1",
-            "CERT-1",
-            "12.08.2026",
-            "01.06.2029",
-            "пак",
-            "1",
-            "",
-            "0.05",
-            "",
-            "0.05",
-            "0.05",
-            morion,
-            uktzed,
-        ]
-        return "\t".join(fields) + "\t"
-
-    second_morion = "99494" if duplicate_morion else "876751"
-    text = "\r\n".join(
-        [
-            header,
-            document,
-            comment,
-            item("4820011183242", "99494", "3004900000"),
-            item("4823002247336", second_morion, "3004"),
-        ]
-    ) + "\r\n"
+    comment = "Synthetic problematic 18/24 layout"
+    item_fields = [
+        "1",
+        "Тестовий товар",
+        "M1",
+        "Виробник",
+        "4820011183242",
+        "UA/TEST",
+        "29.09.2026",
+        "01.01.2099",
+        "7",
+        "",
+        "SER-1",
+        "CERT-1",
+        "29.09.2026",
+        "29.09.2028",
+        "пак",
+        "1",
+        "",
+        "100.00",
+        "",
+        "100.00",
+        "100.00",
+        "99494",
+        "3004900000",
+        "",
+    ]
+    item = "\t".join(item_fields)
+    text = "\r\n".join([header, document, comment, item]) + "\r\n"
     return text.encode("cp1251")
 
 
@@ -155,42 +142,10 @@ def test_more_than_one_extra_terminal_field_is_structural_error():
     assert "MMO_ITEM_FIELD_COUNT" in codes(result)
 
 
-def test_extended_18_23_profile_is_accepted_and_identifiers_are_mapped():
-    mmo = parse_mmo_bytes(_extended_production_v3_bytes())
-    result = validate_mmo(mmo)
+def test_problematic_18_24_layout_is_not_accepted_as_valid_profile():
+    result = validate_mmo(parse_mmo_bytes(_problematic_18_24_bytes()))
 
-    assert not result.errors
-    assert "MMO_PROFILE_EXTENDED_18_23" in codes(result)
-    assert "MMO_DOCUMENT_FIELD_COUNT" not in codes(result)
-    assert "MMO_ITEM_FIELD_COUNT" not in codes(result)
-    assert "MMO_MORION_ID_MISSING" not in codes(result)
-    assert "MMO_DOCUMENT_NET_TOTAL_MISMATCH" not in codes(result)
-    assert "MMO_DOCUMENT_GROSS_TOTAL_MISMATCH" not in codes(result)
-
-    assert mmo.document is not None
-    assert mmo.document.fields[17] == "Договір поставки №1 від 18.01.24"
-    assert len(mmo.items[0].fields) == 24
-    assert mmo.items[0].fields[4] == "4820011183242"
-    assert mmo.items[0].fields[21] == "99494"
-    assert mmo.items[0].fields[22] == "3004900000"
-    assert mmo.items[0].fields[23] == ""
-
-
-def test_extended_profile_uses_document_level_vat_rounding():
-    result = validate_mmo(parse_mmo_bytes(_extended_production_v3_bytes(gross="0.11")))
-    assert "MMO_DOCUMENT_GROSS_TOTAL_MISMATCH" not in codes(result)
-
-    bad = validate_mmo(parse_mmo_bytes(_extended_production_v3_bytes(gross="0.10")))
-    assert "MMO_DOCUMENT_GROSS_TOTAL_MISMATCH" in codes(bad)
-
-
-def test_extended_profile_morion_binding_is_field_22_not_gtin_field_5():
-    result = validate_mmo(
-        parse_mmo_bytes(_extended_production_v3_bytes(duplicate_morion=True))
-    )
-    duplicates = [
-        d for d in result.errors if d.code == "MMO_MORION_ID_DUPLICATE"
-    ]
-    assert len(duplicates) == 1
-    assert duplicates[0].field_index == 22
-    assert duplicates[0].value == "99494"
+    assert result.status == "INVALID"
+    assert "MMO_UNCONFIRMED_18_24_LAYOUT" in codes(result)
+    assert "MMO_DOCUMENT_FIELD_COUNT" in codes(result)
+    assert "MMO_ITEM_FIELD_COUNT" in codes(result)
