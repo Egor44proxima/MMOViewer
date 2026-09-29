@@ -11,7 +11,7 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - pytest
 - GitHub Actions
 
-## Current scope (MMO-2.2a reclassification)
+## Current scope (MMO-2.2b semantic isolation)
 
 - open `.mmo` via dialog or Drag & Drop;
 - detect/preview CP1251 and UTF-8 files;
@@ -24,9 +24,9 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - validate signature/version, dates and numbers;
 - report documented legacy width overruns as warnings rather than hard structural errors;
 - validate line totals and VAT-aware document totals;
-- tabs: Invoice / Items / Diagnostics / RAW;
+- tabs: `Накладна` / `Товари` / `Діагностика` / `RAW`;
 - show UKTZED in the Items table;
-- explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;
+- explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;\n- run profile-specific field, Morion/UKTZED and totals semantics only for a structurally supported document-wide layout;\n- reject mixed legacy/production ITEM layouts within one document;
 - read-only: the source MMO is never modified.
 
 ## Windows development environment
