@@ -47,16 +47,14 @@ def _item(count: int, *, terminal_tab: bool = False) -> str:
 
 
 def _mmo(item: str, *, document: str | None = None):
-    text = "\r
-".join(
+    text = "\r\n".join(
         [
             "РАСХОДНАЯ_НАКЛАДНАЯ\t12345678\t87654321\tверсия_3",
             document or _document(),
             "comment",
             item,
         ]
-    ) + "\r
-"
+    ) + "\r\n"
     return parse_mmo_bytes(text.encode("cp1251"))
 
 
