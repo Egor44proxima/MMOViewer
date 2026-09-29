@@ -13,11 +13,13 @@ from .spec import (
     EXPECTED_SIGNATURE,
     EXPECTED_VERSION,
     HEADER_FIELDS,
-    ITEM_FIELDS,
     LEGACY_ITEM_FIELD_COUNT,
-    PRODUCTION_ITEM_FIELD_COUNT,
     FieldSpec,
     FieldType,
+    document_specs_for,
+    item_morion_field_index,
+    item_specs_for,
+    is_extended_document,
 )
 
 
@@ -98,33 +100,33 @@ def _validate_exact_or_terminal_empty(
     return False
 
 
-def _validate_item_field_count(diags: list[Diagnostic], item: ParsedLine, *, item_index: int) -> bool:
-    actual = len(item.fields)
+def _item_specs_or_diag(
+    diags: list[Diagnostic],
+    item: ParsedLine,
+    *,
+    item_index: int,
+    extended_document: bool,
+) -> tuple[FieldSpec, ...] | None:
+    specs = item_specs_for(item.fields, extended_document=extended_document)
+    if specs is not None:
+        return specs
 
-    if actual in {LEGACY_ITEM_FIELD_COUNT, PRODUCTION_ITEM_FIELD_COUNT}:
-        return True
-
-    if (
-        actual == PRODUCTION_ITEM_FIELD_COUNT + 1
-        and item.fields[-1] == ""
-    ):
-        return True
-
+    expected = (
+        "23 semantic + optional terminal TAB"
+        if extended_document
+        else "21 legacy або 22 production semantic + optional terminal TAB"
+    )
     _add(
         diags,
         Severity.ERROR,
         "MMO_ITEM_FIELD_COUNT",
-        (
-            f"Підтримуються {LEGACY_ITEM_FIELD_COUNT} legacy-поле або "
-            f"{PRODUCTION_ITEM_FIELD_COUNT} production-поля; отримано {actual} фізичних полів."
-        ),
+        f"Очікується {expected}; отримано {len(item.fields)} фізичних полів.",
         line=item.line_no,
         section="ITEM",
         item_index=item_index,
-        value=str(actual),
+        value=str(len(item.fields)),
     )
-    return False
-
+    return None
 
 def _validate_fields(
     diags: list[Diagnostic],
@@ -244,20 +246,33 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
     _validate_exact_or_terminal_empty(
         diags, mmo.header, len(HEADER_FIELDS), "HEADER", "MMO_HEADER_FIELD_COUNT"
     )
+    document_specs: tuple[FieldSpec, ...] | None = None
+    extended_document = False
     if mmo.document is None:
         _add(
             diags,
             Severity.ERROR,
             "MMO_DOCUMENT_FIELD_COUNT",
-            f"Секція DOCUMENT відсутня; очікується {len(DOCUMENT_FIELDS)} полів.",
+            "Секція DOCUMENT відсутня; підтримуються 17 або 18 полів.",
             section="DOCUMENT",
         )
-    elif len(mmo.document.fields) != len(DOCUMENT_FIELDS):
+    elif len(mmo.document.fields) in {17, 18}:
+        document_specs = document_specs_for(mmo.document.fields)
+        extended_document = is_extended_document(mmo.document.fields)
+        if extended_document:
+            _add(
+                diags,
+                Severity.INFO,
+                "MMO_PROFILE_EXTENDED_18_23",
+                "Виявлено extended production v3: DOCUMENT=18, ITEM=23 semantic + terminal TAB.",
+                section="DOCUMENT",
+            )
+    else:
         _add(
             diags,
             Severity.ERROR,
             "MMO_DOCUMENT_FIELD_COUNT",
-            f"Очікується {len(DOCUMENT_FIELDS)} полів, отримано {len(mmo.document.fields)}.",
+            f"Підтримуються 17 legacy/production або 18 extended production полів; отримано {len(mmo.document.fields)}.",
             line=mmo.document.line_no,
             section="DOCUMENT",
             value=str(len(mmo.document.fields)),
@@ -321,8 +336,8 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     field_name=HEADER_FIELDS[idx - 1].name,
                 )
 
-    if mmo.document:
-        _validate_fields(diags, mmo.document, DOCUMENT_FIELDS, "DOCUMENT")
+    if mmo.document and document_specs:
+        _validate_fields(diags, mmo.document, document_specs, "DOCUMENT")
         fields = mmo.document.fields
         if len(fields) >= 15 and fields[14].strip() and fields[14].strip() not in {"0", "1"}:
             _add(
@@ -400,13 +415,19 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
             precision = int(mmo.document.fields[16].strip())
 
     item_totals: list[Decimal] = []
-    item_gross_totals: list[Decimal] = []
+    item_gross_components: list[Decimal] = []
     gross_projection_complete = True
     morion_ids: dict[str, int] = {}
 
     for item_index, item in enumerate(mmo.items, start=1):
-        _validate_item_field_count(diags, item, item_index=item_index)
-        _validate_fields(diags, item, ITEM_FIELDS, "ITEM", item_index=item_index)
+        item_specs = _item_specs_or_diag(
+            diags,
+            item,
+            item_index=item_index,
+            extended_document=extended_document,
+        )
+        if item_specs:
+            _validate_fields(diags, item, item_specs, "ITEM", item_index=item_index)
         f = item.fields
 
         if len(f) >= 2 and not f[1].strip():
@@ -419,7 +440,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                 section="ITEM",
                 item_index=item_index,
                 field_index=2,
-                field_name=ITEM_FIELDS[1].name,
+                field_name=item_specs[1].name if item_specs else "Найменування товару",
             )
 
         if sync_method == "1" and len(f) >= 1 and not f[0].strip():
@@ -432,7 +453,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                 section="ITEM",
                 item_index=item_index,
                 field_index=1,
-                field_name=ITEM_FIELDS[0].name,
+                field_name=item_specs[0].name if item_specs else "ID товару",
             )
         elif sync_method == "2":
             if len(f) >= 1 and not f[0].strip():
@@ -445,7 +466,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     section="ITEM",
                     item_index=item_index,
                     field_index=1,
-                    field_name=ITEM_FIELDS[0].name,
+                    field_name=item_specs[0].name if item_specs else "ID товару",
                 )
             if len(f) >= 3 and not f[2].strip():
                 _add(
@@ -457,33 +478,41 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     section="ITEM",
                     item_index=item_index,
                     field_index=3,
-                    field_name=ITEM_FIELDS[2].name,
+                    field_name=item_specs[2].name if item_specs else "ID виробника",
                 )
-        elif sync_method == "3" and len(f) >= 5:
-            external_id = f[4].strip()
+        elif sync_method == "3":
+            morion_index = item_morion_field_index(
+                f, extended_document=extended_document
+            )
+            external_id = f[morion_index - 1].strip() if len(f) >= morion_index else ""
+            morion_name = (
+                item_specs[morion_index - 1].name
+                if item_specs and len(item_specs) >= morion_index
+                else "Код Моріон"
+            )
             if not external_id:
                 _add(
                     diags,
                     Severity.WARNING,
                     "MMO_MORION_ID_MISSING",
-                    "Для методу Morion не вказаний зовнішній ID.",
+                    "Для методу Morion не вказаний код синхронізації.",
                     line=item.line_no,
                     section="ITEM",
                     item_index=item_index,
-                    field_index=5,
-                    field_name=ITEM_FIELDS[4].name,
+                    field_index=morion_index,
+                    field_name=morion_name,
                 )
             elif external_id in morion_ids:
                 _add(
                     diags,
                     Severity.ERROR,
                     "MMO_MORION_ID_DUPLICATE",
-                    f"Зовнішній ID дублюється з позицією {morion_ids[external_id]}.",
+                    f"Код Morion дублюється з позицією {morion_ids[external_id]}.",
                     line=item.line_no,
                     section="ITEM",
                     item_index=item_index,
-                    field_index=5,
-                    field_name=ITEM_FIELDS[4].name,
+                    field_index=morion_index,
+                    field_name=morion_name,
                     value=external_id,
                 )
             else:
@@ -503,8 +532,9 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     if vat_rate is None:
                         gross_projection_complete = False
                     else:
-                        gross = _quantize_money(total * (Decimal("1") + vat_rate / Decimal("100")))
-                        item_gross_totals.append(gross)
+                        item_gross_components.append(
+                            total * (Decimal("1") + vat_rate / Decimal("100"))
+                        )
 
             if qty is not None and price is not None and total is not None:
                 quantum = Decimal("1").scaleb(-precision)
@@ -520,7 +550,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                         section="ITEM",
                         item_index=item_index,
                         field_index=21,
-                        field_name=ITEM_FIELDS[20].name,
+                        field_name=item_specs[20].name if item_specs else "Сума відпускна",
                         value=f[20],
                     )
 
@@ -546,9 +576,9 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
             if (
                 doc_gross is not None
                 and gross_projection_complete
-                and len(item_gross_totals) == len(item_totals)
+                and len(item_gross_components) == len(item_totals)
             ):
-                calc_gross = _quantize_money(sum(item_gross_totals, Decimal("0")))
+                calc_gross = _quantize_money(sum(item_gross_components, Decimal("0")))
                 if calc_gross != _quantize_money(doc_gross):
                     _add(
                         diags,
