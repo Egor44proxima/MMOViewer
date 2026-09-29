@@ -7,6 +7,16 @@ from .profiles import ProfileStatus, detect_profile
 from .spec import LEGACY_ITEM_FIELDS
 
 
+OPERATIONAL_COLUMN_KEYS = (
+    "morion",
+    "uktzed",
+    "product",
+    "unit",
+    "qty",
+    "price",
+    "total",
+)
+
 @dataclass(frozen=True, slots=True)
 class ItemViewColumn:
     key: str
@@ -119,3 +129,22 @@ def item_column_value(fields: list[str], column: ItemViewColumn) -> str:
     if index >= len(fields):
         return ""
     return fields[index]
+
+
+def split_item_view_columns(
+    mmo: MMOFile,
+) -> tuple[tuple[ItemViewColumn, ...], tuple[ItemViewColumn, ...]]:
+    """Split frozen operational columns from horizontally scrollable detail columns."""
+    columns = build_item_view_columns(mmo)
+    by_key = {column.key: column for column in columns}
+    operational = tuple(
+        by_key[key]
+        for key in OPERATIONAL_COLUMN_KEYS
+        if key in by_key
+    )
+    detail = tuple(
+        column
+        for column in columns
+        if column.key not in OPERATIONAL_COLUMN_KEYS
+    )
+    return operational, detail
