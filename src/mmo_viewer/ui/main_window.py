@@ -24,14 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from mmo_viewer.core.models import Diagnostic, Severity, ValidationResult
-from mmo_viewer.core.spec import (
-    HEADER_FIELDS,
-    document_specs_for,
-    is_extended_document,
-    item_gtin_field_index,
-    item_morion_field_index,
-    item_uktzed_field_index,
-)
+from mmo_viewer.core.spec import DOCUMENT_FIELDS, HEADER_FIELDS, ITEM_FIELDS
 from mmo_viewer.core.validator import open_and_validate
 
 
@@ -128,8 +121,8 @@ class MainWindow(QMainWindow):
         return container
 
     def _build_items_table(self) -> QTableWidget:
-        table = QTableWidget(0, 10)
-        table.setHorizontalHeaderLabels(["№", "Статус", "Morion ID", "GTIN", "УКТ ЗЕД", "Товар", "Од.", "К-сть", "Ціна", "Сума"])
+        table = QTableWidget(0, 9)
+        table.setHorizontalHeaderLabels(["№", "Статус", "Morion ID", "УКТ ЗЕД", "Товар", "Од.", "К-сть", "Ціна", "Сума"])
         table.setAlternatingRowColors(True)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -137,10 +130,10 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
-        for i in range(3, 5):
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
+        for i in range(3, 4):
             header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
-        for i in range(6, 10):
+        for i in range(5, 9):
             header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
         return table
 
@@ -244,7 +237,7 @@ class MainWindow(QMainWindow):
         section.setProperty("class", "sectionTitle")
         self.invoice_form.addRow(section)
         if mmo.document:
-            for idx, spec in enumerate(document_specs_for(mmo.document.fields), start=1):
+            for idx, spec in enumerate(DOCUMENT_FIELDS, start=1):
                 value = mmo.document.fields[idx - 1] if idx <= len(mmo.document.fields) else ""
                 self.invoice_form.addRow(spec.name + ":", self._value_label(value, self._field_diagnostics("DOCUMENT", idx)))
 
@@ -269,23 +262,10 @@ class MainWindow(QMainWindow):
         for row, item in enumerate(result.mmo.items):
             f = item.fields
             status, severity, tooltip = self._item_status(row + 1)
-            extended = bool(
-                result.mmo.document
-                and is_extended_document(result.mmo.document.fields)
-            )
-            morion_idx = item_morion_field_index(f, extended_document=extended)
-            gtin_idx = item_gtin_field_index(f, extended_document=extended)
-            uktzed_idx = item_uktzed_field_index(f, extended_document=extended)
-
-            def field(index: int | None) -> str:
-                return f[index - 1] if index and len(f) >= index else ""
-
             values = [
-                str(row + 1),
-                status,
-                field(morion_idx),
-                field(gtin_idx),
-                field(uktzed_idx),
+                str(row + 1), status,
+                f[4] if len(f) > 4 else "",
+                f[21] if len(f) > 21 else "",
                 f[1] if len(f) > 1 else "",
                 f[14] if len(f) > 14 else "",
                 f[15] if len(f) > 15 else "",
