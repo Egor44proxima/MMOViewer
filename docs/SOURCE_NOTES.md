@@ -77,3 +77,10 @@ The parser itself remains independent of the registry so future files can always
 MMO-3.1 is a UI/read-model enhancement only. It does not introduce or confirm any new MMO field semantics.
 
 Confirmed profiles expose all their semantic Item fields in the table. Unsupported samples remain unsupported; their physical fields may be displayed as generic RAW columns strictly for investigation.
+
+
+## MMO-3.2 frozen Items workspace
+
+MMO-3.2 changes presentation only. Operational columns are frozen in a left pane while the complete confirmed/detail or generic RAW field projection scrolls independently in a right pane. Row selection and vertical scrolling are synchronized, and a read-only inspector exposes the exact selected field value and evidence classification.
+
+No new field semantics or supported format profiles are introduced.

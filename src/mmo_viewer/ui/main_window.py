@@ -6,7 +6,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFileDialog,
-    QAbstractItemView,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -24,8 +23,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from mmo_viewer.core.item_projection import build_item_view_columns, item_column_value
 from mmo_viewer.core.models import Diagnostic, Severity, ValidationResult
+from mmo_viewer.ui.items_workspace import ItemsWorkspace
 from mmo_viewer.core.profiles import detect_profile
 from mmo_viewer.core.spec import DOCUMENT_FIELDS, HEADER_FIELDS
 from mmo_viewer.core.validator import open_and_validate
@@ -93,7 +92,7 @@ class MainWindow(QMainWindow):
         root.addWidget(self.tabs, 1)
 
         self.invoice_tab = self._build_invoice_tab()
-        self.items_table = self._build_items_table()
+        self.items_workspace = ItemsWorkspace()
         self.diag_table = self._build_diagnostics_table()
         self.raw_view = QPlainTextEdit()
         self.raw_view.setReadOnly(True)
@@ -101,7 +100,7 @@ class MainWindow(QMainWindow):
         self.raw_view.setProperty("class", "rawView")
 
         self.tabs.addTab(self.invoice_tab, "Накладна")
-        self.tabs.addTab(self.items_table, "Товари")
+        self.tabs.addTab(self.items_workspace, "Товари")
         self.tabs.addTab(self.diag_table, "Діагностика")
         self.tabs.addTab(self.raw_view, "RAW")
 
@@ -123,19 +122,6 @@ class MainWindow(QMainWindow):
         outer.addWidget(scroll)
         return container
 
-    def _build_items_table(self) -> QTableWidget:
-        table = QTableWidget(0, 2)
-        table.setHorizontalHeaderLabels(["№", "Статус"])
-        table.setAlternatingRowColors(True)
-        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
-        table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-
-        header = table.horizontalHeader()
-        header.setStretchLastSection(False)
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        return table
 
     def _build_diagnostics_table(self) -> QTableWidget:
         table = QTableWidget(0, 7)
@@ -258,55 +244,7 @@ class MainWindow(QMainWindow):
         return "WARNING", sev, "\n".join(d.message for d in ds)
 
     def _render_items(self, result: ValidationResult) -> None:
-        columns = build_item_view_columns(result.mmo)
-        headers = ["№", "Статус", *[column.label for column in columns]]
-
-        self.items_table.clearContents()
-        self.items_table.setColumnCount(len(headers))
-        self.items_table.setHorizontalHeaderLabels(headers)
-        self.items_table.setRowCount(len(result.mmo.items))
-
-        header = self.items_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-
-        # Keep the operational columns readable while allowing the complete
-        # field projection to extend to the right with horizontal scrolling.
-        widths = {
-            0: 44,   # №
-            1: 84,   # Status
-            2: 110,  # Morion
-            3: 105,  # UKTZED
-            4: 360,  # Product
-            5: 86,   # Unit
-            6: 82,   # Quantity
-            7: 90,   # Price
-            8: 95,   # Amount
-        }
-        for index in range(len(headers)):
-            self.items_table.setColumnWidth(index, widths.get(index, 145))
-
-        for row, item in enumerate(result.mmo.items):
-            status, severity, tooltip = self._item_status(row + 1)
-            values = [
-                str(row + 1),
-                status,
-                *[item_column_value(item.fields, column) for column in columns],
-            ]
-
-            for col, value in enumerate(values):
-                cell = QTableWidgetItem(value)
-                if tooltip:
-                    cell.setToolTip(tooltip)
-
-                if col == 1:
-                    if severity == Severity.ERROR:
-                        cell.setForeground(QColor("#b42318"))
-                    elif severity == Severity.WARNING:
-                        cell.setForeground(QColor("#b54708"))
-                    else:
-                        cell.setForeground(QColor("#067647"))
-
-                self.items_table.setItem(row, col, cell)
+        self.items_workspace.render(result, self._item_status)
 
     def _render_diagnostics(self, result: ValidationResult) -> None:
         self.diag_table.setRowCount(len(result.diagnostics))
