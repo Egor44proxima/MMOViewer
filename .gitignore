@@ -1,10 +1,24 @@
-.mamba/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 .pytest_cache/
 .coverage
-dist/
+htmlcov/
+*.egg-info/
+
+# Local micromamba/runtime
+.mamba/
+tools/micromamba.exe
+
+# Build/release
 build/
+dist/
 *.spec
+
+# IDE
 .vscode/
 .idea/
+
+# OS
+Thumbs.db
+.DS_Store
