@@ -124,3 +124,41 @@ The validator accepts both forms.
 ## Decimal separator
 
 The HTA example uses a dot while observed production files use a comma. Both separators are accepted for numeric parsing.
+
+
+## Extended production v3 profile (MMO-2.2)
+
+The supplied production invoice `2026-09-28_11-U163954808-4.mmo` confirms a second v3 layout:
+
+- Header: 4 fields.
+- Document: 18 fields.
+- Comment: 1 field.
+- Item: 24 physical fields = 23 semantic fields + one terminal empty field from the trailing TAB.
+
+### Document field 18
+
+18. **Договір / підстава** — observed value example: `Договiр поставки №1 від 18.01.24`.
+
+The current evidence establishes the semantic role, but not a vendor-independent maximum width.
+
+### Extended Item fields
+
+Fields 1..4 and 6..21 retain the legacy meanings. The extended identifiers are:
+
+5. **GTIN / штрихкод** — observed as 13-digit GTIN values in all 40 positions of the supplied sample.
+22. **Код Моріон** — populated and unique for all 40 positions; Document field 16 is synchronization method `3`, so this field is the observed Morion binding key in this extended profile.
+23. **Код УКТ ЗЕД** — populated with 4- or 10-digit commodity codes.
+24. Empty physical field caused by the terminal TAB; it is preserved in RAW but is not a semantic field.
+
+This profile is selected only when Document has 18 fields. The existing 17-field layouts keep their previous field-5/field-22 semantics.
+
+### Extended arithmetic evidence
+
+For the supplied 40-position invoice:
+
+- sum(Item field 21) = `9853.65`;
+- Document field 12 = `9853.65`;
+- every Item satisfies Quantity field 16 × Sale price field 20 = Sale amount field 21;
+- every Item VAT rate is 7%;
+- applying VAT to the full-precision line amounts and rounding the final document gross once gives `10543.41`, exactly matching Document field 13;
+- rounding VAT-inclusive totals per line first would produce `10543.39`, so MMO-2.2 uses **document-level final rounding** for this projection.
