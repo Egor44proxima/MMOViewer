@@ -51,3 +51,10 @@ Its SHA-256 may be retained as investigation evidence:
 What remains usable from that sample is limited to observed facts (field counts, raw values, arithmetic relationships). Semantic field assignments and profile acceptance require corroboration from a known-good file or authoritative format documentation.
 
 MMO-2.2a therefore reclassifies the 18/24 structure as unsupported/problematic and adds a dedicated regression ensuring it remains INVALID.
+
+
+## MMO-2.2b semantic isolation
+
+The 18/24 problematic sample remains investigation evidence only. Structural errors are reported, while profile-specific field semantics and business checks are deliberately suppressed for unsupported layouts.
+
+The same guard applies to mixed supported Item layouts: a single document may not combine confirmed legacy and production Item shapes without an authoritative profile rule. Synthetic regression tests cover both unsupported-layout isolation and mixed-layout rejection.

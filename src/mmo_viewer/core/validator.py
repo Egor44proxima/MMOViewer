@@ -18,6 +18,9 @@ from .spec import (
     PRODUCTION_ITEM_FIELD_COUNT,
     FieldSpec,
     FieldType,
+    classify_item_layout,
+    item_layouts_compatible,
+    supported_semantic_layout,
 )
 
 
@@ -265,6 +268,21 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
             section="DOCUMENT",
             value="18/24",
         )
+    item_rows = [item.fields for item in mmo.items]
+    if not item_layouts_compatible(item_rows):
+        _add(
+            diags,
+            Severity.ERROR,
+            "MMO_ITEM_LAYOUT_MIXED",
+            "Позиції документа змішують несумісні ITEM layouts; профіль документа не може бути визначений однозначно.",
+            section="ITEM",
+        )
+
+    semantic_layout_supported = supported_semantic_layout(
+        mmo.document.fields if mmo.document else None,
+        item_rows,
+    )
+
     if mmo.document is None:
         _add(
             diags,
@@ -342,7 +360,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     field_name=HEADER_FIELDS[idx - 1].name,
                 )
 
-    if mmo.document:
+    if mmo.document and semantic_layout_supported:
         _validate_fields(diags, mmo.document, DOCUMENT_FIELDS, "DOCUMENT")
         fields = mmo.document.fields
         if len(fields) >= 15 and fields[14].strip() and fields[14].strip() not in {"0", "1"}:
@@ -412,7 +430,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
     sync_method = None
     precision = 4
     vat_included = None
-    if mmo.document:
+    if mmo.document and semantic_layout_supported:
         if len(mmo.document.fields) >= 15 and mmo.document.fields[14].strip() in {"0", "1"}:
             vat_included = mmo.document.fields[14].strip() == "1"
         if len(mmo.document.fields) >= 16:
@@ -427,8 +445,12 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
 
     for item_index, item in enumerate(mmo.items, start=1):
         _validate_item_field_count(diags, item, item_index=item_index)
-        _validate_fields(diags, item, ITEM_FIELDS, "ITEM", item_index=item_index)
         f = item.fields
+
+        if not semantic_layout_supported:
+            continue
+
+        _validate_fields(diags, item, ITEM_FIELDS, "ITEM", item_index=item_index)
 
         if len(f) >= 2 and not f[1].strip():
             _add(
@@ -545,7 +567,12 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                         value=f[20],
                     )
 
-    if mmo.document and len(mmo.document.fields) >= 13 and item_totals:
+    if (
+        semantic_layout_supported
+        and mmo.document
+        and len(mmo.document.fields) >= 13
+        and item_totals
+    ):
         doc_net = parse_decimal(mmo.document.fields[11])
         doc_gross = parse_decimal(mmo.document.fields[12])
         calc_line_total = _quantize_money(sum(item_totals, Decimal("0")))

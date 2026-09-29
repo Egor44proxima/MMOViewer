@@ -89,6 +89,37 @@ def _problematic_18_24_bytes() -> bytes:
     return text.encode("cp1251")
 
 
+def _mixed_item_layout_bytes() -> bytes:
+    header = "РАСХОДНАЯ_НАКЛАДНАЯ\t12345678\t87654321\tверсия_3"
+    document = (
+        "INV-MIXED\t29.09.2026\t0\tТестовий постачальник\tБанк\t"
+        "26000000000000\t300000\t(044) 000-00-00\tКиїв\t\t\t"
+        "200.00\t214.00\t30.09.2026\t0\t1\t2"
+    )
+    comment = "Synthetic mixed item layout"
+
+    legacy = [
+        "1", "Legacy item", "M1", "Maker", "1001", "UA/TEST",
+        "29.09.2026", "01.01.2099", "7", "", "S1", "C1",
+        "29.09.2026", "29.09.2028", "пак", "1", "100.00",
+        "90.00", "0", "100.00", "100.00",
+    ]
+    production = [
+        "2", "Production item", "M2", "Maker", "1002", "UA/TEST",
+        "29.09.2026", "01.01.2099", "7", "", "S2", "C2",
+        "29.09.2026", "29.09.2028", "пак", "1", "100.00",
+        "90.00", "0", "100.00", "100.00", "3004900000",
+    ]
+    text = "\r\n".join([
+        header,
+        document,
+        comment,
+        "\t".join(legacy),
+        "\t".join(production) + "\t",
+    ]) + "\r\n"
+    return text.encode("cp1251")
+
+
 def test_valid_minimal_has_no_errors():
     result = open_and_validate(FIXTURES / "valid_minimal.mmo")
     assert result.status == "VALID"
@@ -140,6 +171,12 @@ def test_production_gross_total_mismatch_is_detected():
 def test_more_than_one_extra_terminal_field_is_structural_error():
     result = validate_mmo(parse_mmo_bytes(_production_v3_bytes(extra_tail="\t")))
     assert "MMO_ITEM_FIELD_COUNT" in codes(result)
+    assert "MMO_MORION_ID_MISSING" not in codes(result)
+    assert "MMO_MORION_ID_DUPLICATE" not in codes(result)
+    assert not [
+        d for d in result.diagnostics
+        if d.section == "ITEM" and d.code in {"MMO_FIELD_WIDTH_LEGACY", "MMO_INVALID_NUMBER", "MMO_DECIMAL_SCALE"}
+    ]
 
 
 def test_problematic_18_24_layout_is_not_accepted_as_valid_profile():
@@ -149,3 +186,23 @@ def test_problematic_18_24_layout_is_not_accepted_as_valid_profile():
     assert "MMO_UNCONFIRMED_18_24_LAYOUT" in codes(result)
     assert "MMO_DOCUMENT_FIELD_COUNT" in codes(result)
     assert "MMO_ITEM_FIELD_COUNT" in codes(result)
+    assert "MMO_MORION_ID_MISSING" not in codes(result)
+    assert "MMO_MORION_ID_DUPLICATE" not in codes(result)
+    assert "MMO_ITEM_TOTAL_MISMATCH" not in codes(result)
+    assert "MMO_DOCUMENT_NET_TOTAL_MISMATCH" not in codes(result)
+    assert "MMO_DOCUMENT_GROSS_TOTAL_MISMATCH" not in codes(result)
+    assert not [
+        d for d in result.diagnostics
+        if d.section == "ITEM"
+        and d.code in {"MMO_FIELD_WIDTH_LEGACY", "MMO_INVALID_NUMBER", "MMO_DECIMAL_SCALE"}
+    ]
+
+
+def test_mixed_supported_item_layouts_are_rejected_document_wide():
+    result = validate_mmo(parse_mmo_bytes(_mixed_item_layout_bytes()))
+
+    assert result.status == "INVALID"
+    assert "MMO_ITEM_LAYOUT_MIXED" in codes(result)
+    assert "MMO_MORION_ID_MISSING" not in codes(result)
+    assert "MMO_DOCUMENT_NET_TOTAL_MISMATCH" not in codes(result)
+    assert "MMO_DOCUMENT_GROSS_TOTAL_MISMATCH" not in codes(result)

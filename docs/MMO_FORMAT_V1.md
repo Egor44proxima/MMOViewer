@@ -20,6 +20,8 @@ It distinguishes **documented legacy rules** from **observed production extensio
 
 The legacy `ParseStrField()` appends a TAB before parsing. Empty and trailing TAB fields therefore remain part of physical evidence and MUST NOT be stripped from RAW input.
 
+Completely empty physical detail lines after the Comment section are skipped by the parser, matching the current legacy-compatible parser behavior. Non-empty lines, including lines containing TAB-separated empty fields, are preserved.
+
 ## Header
 
 Semantic fields:
@@ -116,6 +118,8 @@ When Document field 15 is `1`:
 
 The validator does not invent a gross projection when VAT data is incomplete.
 
+For the currently confirmed production path, each VAT-inclusive line projection is rounded to 2 decimal places with `ROUND_HALF_UP`, then those rounded line projections are summed and the final comparison amount is kept at 2 decimal places. This is the behavior implemented by the validator; no alternative rounding model is inferred for unsupported layouts.
+
 ## Dates
 
 The HTA declares width 10 but its embedded example uses `DD.MM.YY`; supplied modern samples use `DD.MM.YYYY`.
@@ -151,3 +155,25 @@ The confirmed supported layouts remain those established before MMO-2.2:
 
 - documented legacy Document 17 / Item 21;
 - observed production Document 17 / Item 22, with optional terminal TAB where already confirmed.
+
+
+## Semantic isolation for unsupported layouts (MMO-2.2b)
+
+Structural recognition and semantic interpretation are separate operations.
+
+Profile-specific semantics are applied only when all of the following are true:
+
+- Document contains exactly the confirmed 17 fields;
+- every Item row matches a supported structural shape;
+- the Item rows do not mix a confirmed legacy 21-field layout with a confirmed production 22-field layout.
+
+If those conditions are not met, the validator still reports structural diagnostics and keeps RAW evidence, but it does **not**:
+
+- interpret field 5 as the Morion binding key;
+- interpret field 22 as UKTZED;
+- run profile-specific field type/width diagnostics for unsupported Item rows;
+- run quantity/price/amount, VAT or document-total business checks for the unsupported layout.
+
+The UI follows the same isolation rule: profile-specific Morion ID and UKTZED columns show no inferred value for unsupported layouts; the original values remain available in RAW.
+
+A document that mixes confirmed legacy and production Item layouts is INVALID with diagnostic code `MMO_ITEM_LAYOUT_MIXED`.
