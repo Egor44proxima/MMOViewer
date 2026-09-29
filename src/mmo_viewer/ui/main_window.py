@@ -328,7 +328,14 @@ class MainWindow(QMainWindow):
     def _render_raw(self, result: ValidationResult) -> None:
         lines: list[str] = []
         mmo = result.mmo
+        profile_match = detect_profile(mmo)
+        profile_label = (
+            profile_match.profile.label
+            if profile_match.profile is not None
+            else profile_match.status.value.upper()
+        )
         lines.append(f"FILE: {mmo.path}")
+        lines.append(f"PROFILE: {profile_label}")
         lines.append(f"ENCODING: {mmo.encoding}    EOL: {mmo.eol}    BOM: {mmo.bom}")
         lines.append("")
 
