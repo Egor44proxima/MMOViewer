@@ -11,7 +11,7 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - pytest
 - GitHub Actions
 
-## Current scope (MMO-3.1 full Items projection)
+## Current scope (MMO-3.2 frozen operational columns & RAW inspector)
 
 - open `.mmo` via dialog or Drag & Drop;
 - detect/preview CP1251 and UTF-8 files;
@@ -25,8 +25,8 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - report documented legacy width overruns as warnings rather than hard structural errors;
 - validate line totals and VAT-aware document totals;
 - tabs: `Накладна` / `Товари` / `Діагностика` / `RAW`;
-- show the operational columns first in the Items table, then expose every remaining confirmed ITEM field with horizontal scrolling;
-- for unsupported layouts, show all physical ITEM fields only as generic `Fxx · RAW` columns without assigning business semantics;
+- keep `№ / Статус / Morion ID / УКТ ЗЕД / Товар / Од. / К-сть / Ціна / Сума` frozen on the left while detail fields scroll horizontally on the right;
+- for unsupported layouts, show all physical ITEM fields only as generic `Fxx · RAW` columns without assigning business semantics;\n- synchronize row selection and vertical scrolling between frozen/detail panes;\n- show the selected detail/RAW field in a dedicated inspector with row, physical field number, classification and full value;
 - explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;
 - run profile-specific field, Morion/UKTZED and totals semantics only for a structurally supported document-wide layout;
 - reject mixed legacy/production ITEM layouts within one document;
