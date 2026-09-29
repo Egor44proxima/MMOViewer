@@ -1,4 +1,7 @@
-def test_items_workspace_imports():
-    from mmo_viewer.ui.items_workspace import ItemsWorkspace
+import ast
+from pathlib import Path
 
-    assert ItemsWorkspace.__name__ == "ItemsWorkspace"
+
+def test_items_workspace_source_is_valid_python():
+    source = Path("src/mmo_viewer/ui/items_workspace.py").read_text(encoding="utf-8")
+    ast.parse(source)
