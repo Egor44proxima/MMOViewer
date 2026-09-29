@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from mmo_viewer.core.models import Diagnostic, Severity, ValidationResult
-from mmo_viewer.core.spec import DOCUMENT_FIELDS, HEADER_FIELDS, ITEM_FIELDS
+from mmo_viewer.core.spec import DOCUMENT_FIELDS, HEADER_FIELDS, ITEM_FIELDS, supported_semantic_layout
 from mmo_viewer.core.validator import open_and_validate
 
 
@@ -259,13 +259,18 @@ class MainWindow(QMainWindow):
 
     def _render_items(self, result: ValidationResult) -> None:
         self.items_table.setRowCount(len(result.mmo.items))
+        semantic_layout_supported = supported_semantic_layout(
+            result.mmo.document.fields if result.mmo.document else None,
+            [item.fields for item in result.mmo.items],
+        )
         for row, item in enumerate(result.mmo.items):
             f = item.fields
             status, severity, tooltip = self._item_status(row + 1)
             values = [
-                str(row + 1), status,
-                f[4] if len(f) > 4 else "",
-                f[21] if len(f) > 21 else "",
+                str(row + 1),
+                status,
+                f[4] if semantic_layout_supported and len(f) > 4 else "—",
+                f[21] if semantic_layout_supported and len(f) > 21 else "—",
                 f[1] if len(f) > 1 else "",
                 f[14] if len(f) > 14 else "",
                 f[15] if len(f) > 15 else "",
