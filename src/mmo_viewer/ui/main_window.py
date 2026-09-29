@@ -24,7 +24,8 @@ from PySide6.QtWidgets import (
 )
 
 from mmo_viewer.core.models import Diagnostic, Severity, ValidationResult
-from mmo_viewer.core.spec import DOCUMENT_FIELDS, HEADER_FIELDS, ITEM_FIELDS, supported_semantic_layout
+from mmo_viewer.core.profiles import ProfileStatus, detect_profile
+from mmo_viewer.core.spec import DOCUMENT_FIELDS, HEADER_FIELDS
 from mmo_viewer.core.validator import open_and_validate
 
 
@@ -259,18 +260,29 @@ class MainWindow(QMainWindow):
 
     def _render_items(self, result: ValidationResult) -> None:
         self.items_table.setRowCount(len(result.mmo.items))
-        semantic_layout_supported = supported_semantic_layout(
-            result.mmo.document.fields if result.mmo.document else None,
-            [item.fields for item in result.mmo.items],
+        profile_match = detect_profile(result.mmo)
+        semantic_layout_supported = profile_match.status != ProfileStatus.UNSUPPORTED
+        uktzed_index = (
+            profile_match.profile.uktzed_field_index
+            if profile_match.profile is not None
+            else None
         )
         for row, item in enumerate(result.mmo.items):
             f = item.fields
             status, severity, tooltip = self._item_status(row + 1)
+
+            morion = f[4] if semantic_layout_supported and len(f) > 4 else "—"
+            uktzed = (
+                f[uktzed_index - 1]
+                if uktzed_index and len(f) >= uktzed_index
+                else "—"
+            )
+
             values = [
                 str(row + 1),
                 status,
-                f[4] if semantic_layout_supported and len(f) > 4 else "—",
-                f[21] if semantic_layout_supported and len(f) > 21 else "—",
+                morion,
+                uktzed,
                 f[1] if len(f) > 1 else "",
                 f[14] if len(f) > 14 else "",
                 f[15] if len(f) > 15 else "",
@@ -316,7 +328,14 @@ class MainWindow(QMainWindow):
     def _render_raw(self, result: ValidationResult) -> None:
         lines: list[str] = []
         mmo = result.mmo
+        profile_match = detect_profile(mmo)
+        profile_label = (
+            profile_match.profile.label
+            if profile_match.profile is not None
+            else profile_match.status.value.upper()
+        )
         lines.append(f"FILE: {mmo.path}")
+        lines.append(f"PROFILE: {profile_label}")
         lines.append(f"ENCODING: {mmo.encoding}    EOL: {mmo.eol}    BOM: {mmo.bom}")
         lines.append("")
 

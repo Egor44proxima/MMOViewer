@@ -58,3 +58,15 @@ MMO-2.2a therefore reclassifies the 18/24 structure as unsupported/problematic a
 The 18/24 problematic sample remains investigation evidence only. Structural errors are reported, while profile-specific field semantics and business checks are deliberately suppressed for unsupported layouts.
 
 The same guard applies to mixed supported Item layouts: a single document may not combine confirmed legacy and production Item shapes without an authoritative profile rule. Synthetic regression tests cover both unsupported-layout isolation and mixed-layout rejection.
+
+
+## MMO-3 profile registry
+
+MMO-3 does not add a new production format. It converts already confirmed evidence into explicit code profiles:
+
+- `legacy_v3_17_21` from the documented legacy contract;
+- `production_v3_17_22_uktzed` from the previously corroborated production sample.
+
+The problematic 18/24 file is deliberately absent from the supported registry. Its role remains negative/investigation evidence only.
+
+The parser itself remains independent of the registry so future files can always be opened and inspected in RAW even when no supported profile matches.

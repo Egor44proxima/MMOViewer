@@ -177,3 +177,57 @@ If those conditions are not met, the validator still reports structural diagnost
 The UI follows the same isolation rule: profile-specific Morion ID and UKTZED columns show no inferred value for unsupported layouts; the original values remain available in RAW.
 
 A document that mixes confirmed legacy and production Item layouts is INVALID with diagnostic code `MMO_ITEM_LAYOUT_MIXED`.
+
+
+## Format profiles and parser separation (MMO-3)
+
+MMO-3 makes the distinction between **physical parsing** and **format interpretation** explicit.
+
+The parser remains evidence-first and format-agnostic:
+
+- decode bytes;
+- detect EOL;
+- preserve raw text;
+- split Header / Document / Comment / Item physical lines;
+- preserve empty and terminal TAB fields;
+- skip only completely empty detail lines.
+
+The parser does **not** decide that an unknown field is GTIN, Morion, UKTZED, contract number, or any other business concept.
+
+Profile detection runs after parsing and currently exposes three states:
+
+- `SUPPORTED` — a confirmed profile was identified;
+- `AMBIGUOUS` — the structure is allowed but the physical evidence is insufficient to choose a single semantic profile safely;
+- `UNSUPPORTED` — the structure does not match the confirmed contracts and profile-specific semantics are blocked.
+
+### Registered profiles
+
+`legacy_v3_17_21`
+
+- Label: `Legacy v3 · 17/21`
+- Document: 17 fields
+- Item: 21 semantic fields
+- Morion binding: field 5 for synchronization method 3
+- UKTZED: not defined by this profile
+
+`production_v3_17_22_uktzed`
+
+- Label: `Production v3 · 17/22 · UKTZED`
+- Document: 17 fields
+- Item: 22 semantic fields
+- optional one terminal TAB after Item field 22
+- Morion binding: field 5 for synchronization method 3
+- UKTZED: field 22
+
+### Ambiguous 22-physical-field row
+
+A physical Item row containing exactly 22 fields where the last field is empty is intentionally treated as ambiguous. That shape can represent either:
+
+- legacy 21 fields plus one terminal TAB, or
+- production 22 fields with an empty UKTZED field.
+
+MMO Viewer therefore validates the shared 21-field semantics but does not infer a UKTZED value from that row unless stronger document-wide production evidence exists.
+
+### Unsupported layouts
+
+The problematic 18/24 sample remains `UNSUPPORTED`. The detector does not register it as a profile. Structural diagnostics and RAW evidence remain available, while profile-specific semantics stay isolated.

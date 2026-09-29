@@ -11,14 +11,14 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - pytest
 - GitHub Actions
 
-## Current scope (MMO-2.2b semantic isolation)
+## Current scope (MMO-3 format profiles & parser)
 
 - open `.mmo` via dialog or Drag & Drop;
 - detect/preview CP1251 and UTF-8 files;
 - preserve empty and trailing TAB fields as RAW evidence;
 - parse 4 MMO sections;
-- support the documented legacy `4 / 17 / 1 / 21` contract;
-- support the observed production v3 item extension with field 22 = `Код УКТ ЗЕД`;
+- support the documented legacy `4 / 17 / 1 / 21` contract through an explicit `Legacy v3 · 17/21` profile;
+- support the observed production v3 item extension through an explicit `Production v3 · 17/22 · UKTZED` profile;
 - accept one terminal empty TAB field for observed production Header/Item records without discarding it from RAW;
 - treat whitespace-only numeric values as empty;
 - validate signature/version, dates and numbers;
@@ -29,6 +29,9 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;
 - run profile-specific field, Morion/UKTZED and totals semantics only for a structurally supported document-wide layout;
 - reject mixed legacy/production ITEM layouts within one document;
+- detect `SUPPORTED` / `AMBIGUOUS` / `UNSUPPORTED` profile state independently from raw parsing;
+- keep the parser structure-only: it preserves physical evidence first, while profile detection is a separate read-model step;
+- expose the detected profile in diagnostics and RAW view;
 - read-only: the source MMO is never modified.
 
 ## Windows development environment
