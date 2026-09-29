@@ -4,13 +4,15 @@ The implementation is calibrated against source material supplied during develop
 
 - legacy ANR HTA structure description;
 - real draft `237587` MMO example;
-- real production invoice `mmo-00554701-от--25-08-2026-06-34-17(2).mmo`;\n- extended production invoice `2026-09-28_11-U163954808-4.mmo`.
+- real production invoice `mmo-00554701-от--25-08-2026-06-34-17(2).mmo`;
+- extended production invoice `2026-09-28_11-U163954808-4.mmo`.
 
 Observed source checksums:
 
 - HTA SHA-256: `ca67e34f4d4978809a6417c7adf9ee185bd56d47df1efd8f55e652ffbc4260fb`
 - draft MMO SHA-256: `55ef8ae347f90cdb0c0de19a9688e6a7914947bf8f53e90fc37e466779a35fb1`
-- production MMO SHA-256: `9d5ff958f76933fddb55184c3f312d8dd2354a458b5fb9e302467f74875f236b`\n- extended production MMO SHA-256: `57b85fdfa0a6d2842d31663f6321251bd8d3490c08da04c12d52a01a9199fa09`
+- production MMO SHA-256: `9d5ff958f76933fddb55184c3f312d8dd2354a458b5fb9e302467f74875f236b`
+- extended production MMO SHA-256: `57b85fdfa0a6d2842d31663f6321251bd8d3490c08da04c12d52a01a9199fa09`
 
 Real business MMO files are **not** bundled in this repository. Tests use synthetic fixtures/inline synthetic records that reproduce only the format characteristics required by regression tests.
 
