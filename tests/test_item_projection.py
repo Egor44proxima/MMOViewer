@@ -1,4 +1,8 @@
-from mmo_viewer.core.item_projection import (\n    build_item_view_columns,\n    item_column_value,\n    split_item_view_columns,\n)
+from mmo_viewer.core.item_projection import (
+    build_item_view_columns,
+    item_column_value,
+    split_item_view_columns,
+)
 from mmo_viewer.core.parser import parse_mmo_bytes
 
 
@@ -43,14 +47,16 @@ def _item(count: int, *, terminal_tab: bool = False) -> str:
 
 
 def _mmo(item: str, *, document: str | None = None):
-    text = "\r\n".join(
+    text = "\r
+".join(
         [
             "РАСХОДНАЯ_НАКЛАДНАЯ\t12345678\t87654321\tверсия_3",
             document or _document(),
             "comment",
             item,
         ]
-    ) + "\r\n"
+    ) + "\r
+"
     return parse_mmo_bytes(text.encode("cp1251"))
 
 
