@@ -28,7 +28,10 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - show UKTZED in the Items table;
 - explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;
 - run profile-specific field, Morion/UKTZED and totals semantics only for a structurally supported document-wide layout;
-- reject mixed legacy/production ITEM layouts within one document;\n- detect `SUPPORTED` / `AMBIGUOUS` / `UNSUPPORTED` profile state independently from raw parsing;\n- keep the parser structure-only: it preserves physical evidence first, while profile detection is a separate read-model step;\n- expose the detected profile in diagnostics and RAW view;
+- reject mixed legacy/production ITEM layouts within one document;
+- detect `SUPPORTED` / `AMBIGUOUS` / `UNSUPPORTED` profile state independently from raw parsing;
+- keep the parser structure-only: it preserves physical evidence first, while profile detection is a separate read-model step;
+- expose the detected profile in diagnostics and RAW view;
 - read-only: the source MMO is never modified.
 
 ## Windows development environment
