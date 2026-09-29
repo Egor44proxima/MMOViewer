@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFileDialog,
+    QAbstractItemView,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -23,8 +24,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from mmo_viewer.core.item_projection import build_item_view_columns, item_column_value
 from mmo_viewer.core.models import Diagnostic, Severity, ValidationResult
-from mmo_viewer.core.profiles import ProfileStatus, detect_profile
+from mmo_viewer.core.profiles import detect_profile
 from mmo_viewer.core.spec import DOCUMENT_FIELDS, HEADER_FIELDS
 from mmo_viewer.core.validator import open_and_validate
 
@@ -122,20 +124,17 @@ class MainWindow(QMainWindow):
         return container
 
     def _build_items_table(self) -> QTableWidget:
-        table = QTableWidget(0, 9)
-        table.setHorizontalHeaderLabels(["№", "Статус", "Morion ID", "УКТ ЗЕД", "Товар", "Од.", "К-сть", "Ціна", "Сума"])
+        table = QTableWidget(0, 2)
+        table.setHorizontalHeaderLabels(["№", "Статус"])
         table.setAlternatingRowColors(True)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         header = table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
-        for i in range(3, 4):
-            header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
-        for i in range(5, 9):
-            header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         return table
 
     def _build_diagnostics_table(self) -> QTableWidget:
@@ -259,40 +258,46 @@ class MainWindow(QMainWindow):
         return "WARNING", sev, "\n".join(d.message for d in ds)
 
     def _render_items(self, result: ValidationResult) -> None:
+        columns = build_item_view_columns(result.mmo)
+        headers = ["№", "Статус", *[column.label for column in columns]]
+
+        self.items_table.clearContents()
+        self.items_table.setColumnCount(len(headers))
+        self.items_table.setHorizontalHeaderLabels(headers)
         self.items_table.setRowCount(len(result.mmo.items))
-        profile_match = detect_profile(result.mmo)
-        semantic_layout_supported = profile_match.status != ProfileStatus.UNSUPPORTED
-        uktzed_index = (
-            profile_match.profile.uktzed_field_index
-            if profile_match.profile is not None
-            else None
-        )
+
+        header = self.items_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+
+        # Keep the operational columns readable while allowing the complete
+        # field projection to extend to the right with horizontal scrolling.
+        widths = {
+            0: 44,   # №
+            1: 84,   # Status
+            2: 110,  # Morion
+            3: 105,  # UKTZED
+            4: 360,  # Product
+            5: 86,   # Unit
+            6: 82,   # Quantity
+            7: 90,   # Price
+            8: 95,   # Amount
+        }
+        for index in range(len(headers)):
+            self.items_table.setColumnWidth(index, widths.get(index, 145))
+
         for row, item in enumerate(result.mmo.items):
-            f = item.fields
             status, severity, tooltip = self._item_status(row + 1)
-
-            morion = f[4] if semantic_layout_supported and len(f) > 4 else "—"
-            uktzed = (
-                f[uktzed_index - 1]
-                if uktzed_index and len(f) >= uktzed_index
-                else "—"
-            )
-
             values = [
                 str(row + 1),
                 status,
-                morion,
-                uktzed,
-                f[1] if len(f) > 1 else "",
-                f[14] if len(f) > 14 else "",
-                f[15] if len(f) > 15 else "",
-                f[19] if len(f) > 19 else "",
-                f[20] if len(f) > 20 else "",
+                *[item_column_value(item.fields, column) for column in columns],
             ]
+
             for col, value in enumerate(values):
                 cell = QTableWidgetItem(value)
                 if tooltip:
                     cell.setToolTip(tooltip)
+
                 if col == 1:
                     if severity == Severity.ERROR:
                         cell.setForeground(QColor("#b42318"))
@@ -300,6 +305,7 @@ class MainWindow(QMainWindow):
                         cell.setForeground(QColor("#b54708"))
                     else:
                         cell.setForeground(QColor("#067647"))
+
                 self.items_table.setItem(row, col, cell)
 
     def _render_diagnostics(self, result: ValidationResult) -> None:
