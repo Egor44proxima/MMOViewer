@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFileDialog,
+    QAbstractItemView,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -128,7 +129,7 @@ class MainWindow(QMainWindow):
         table.setAlternatingRowColors(True)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        table.setHorizontalScrollMode(QTableWidget.ScrollMode.ScrollPerPixel)
+        table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         header = table.horizontalHeader()
