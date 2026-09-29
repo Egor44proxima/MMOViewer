@@ -5,7 +5,7 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 ## Stack
 
 - Python 3.13
-- micromamba (portable development environment)
+- micromamba
 - PySide6 / Qt Widgets
 - QSS theme
 - pytest
@@ -17,37 +17,53 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - detect/preview CP1251 and UTF-8 files;
 - preserve empty and trailing TAB fields;
 - parse 4 MMO sections;
-- validate 4 / 17 / 1 / 21 field contract;
+- validate the documented 4 / 17 / 1 / 21 legacy contract;
 - validate signature/version, max widths, dates and numbers;
 - basic business diagnostics (sync method, totals);
 - tabs: Invoice / Items / Diagnostics / RAW;
-- read-only: source MMO is never modified.
+- read-only: the source MMO is never modified.
 
-## Portable setup on Windows
+## Windows development environment
+
+The project source tree is portable, but the micromamba environment is intentionally kept outside the repository at:
+
+```text
+C:\mmo-mamba
+```
+
+This short root path avoids Windows path-length problems caused by deep Qt/PySide6 package trees.
+
+The command scripts use the same environment root:
+
+- `setup-env.cmd` — creates/recreates the `mmoviewer` environment;
+- `check-env.cmd` — verifies Python and PySide6;
+- `run.cmd` — starts MMO Viewer through `launcher.py`;
+- `test.cmd` — runs the test suite.
+
+### First setup
 
 1. Put `micromamba.exe` into `tools\micromamba.exe`.
 2. Run `setup-env.cmd`.
-3. Run `run.cmd`.
-4. Run tests with `test.cmd`.
+3. Run `check-env.cmd`.
+4. Run `run.cmd`.
+5. Run tests with `test.cmd`.
 
-The environment is kept under `.mamba\` and is intentionally ignored by Git.
-Do **not** copy `.mamba\` between PCs; recreate it with `setup-env.cmd`.
+`tools\micromamba.exe` is a local development tool and is intentionally ignored by Git.
 
-## GitHub
+Do not copy `C:\mmo-mamba` between computers. Clone/copy the source repository and recreate the environment with `setup-env.cmd` on each Windows machine.
 
-Suggested first push:
+A legacy/local `.mamba\` directory is also ignored if one is created during experiments, but it is not the canonical environment location.
 
-```bat
-git init
-git add .
-git commit -m "MMO-1: bootstrap PySide6 MMO Viewer"
-git branch -M main
-git remote add origin <YOUR_GITHUB_REPOSITORY_URL>
-git push -u origin main
+## Repository
+
+```text
+https://github.com/Egor44proxima/MMOViewer.git
 ```
 
-Then create `develop` and use feature branches such as `feature/MMO-3-parser`.
+The default branch is `main`. Feature/fix work should be done on dedicated branches and merged after verification.
 
 ## Contract source
 
 See `docs/MMO_FORMAT_V1.md` and `docs/SOURCE_NOTES.md`.
+
+The current legacy format contract is based on the supplied ANR HTA description. Real-world MMO variants may extend that contract; unsupported/extended layouts must be investigated before being classified as format errors.
