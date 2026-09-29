@@ -256,3 +256,40 @@ For `UNSUPPORTED` layouts:
 - this preserves inspection capability without weakening semantic isolation.
 
 The RAW tab remains the canonical byte/text evidence view.
+
+
+## Frozen operational columns & RAW inspector (MMO-3.2)
+
+The `Товари` tab is split into two synchronized panes.
+
+The left pane is frozen and keeps the operational context visible:
+
+- №
+- Статус
+- Morion ID
+- УКТ ЗЕД
+- Товар
+- Од.
+- К-сть
+- Ціна
+- Сума
+
+The right pane contains all remaining profile/detail fields and is horizontally scrollable.
+
+Both panes:
+
+- represent the same Item rows;
+- share row selection;
+- synchronize vertical scrolling;
+- remain read-only.
+
+For unsupported layouts the frozen business fields remain blank/unknown and the right pane exposes the physical evidence only as generic `Fxx · RAW` fields.
+
+Selecting a field in the right pane updates the RAW Inspector below the tables. The inspector shows:
+
+- selected row number;
+- physical field number;
+- whether the field is confirmed semantic data or RAW/unconfirmed evidence;
+- the complete field value without inventing additional semantics.
+
+This is a UI/read-model feature only; it does not change parsing, profile detection or validation contracts.
