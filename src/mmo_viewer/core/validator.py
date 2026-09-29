@@ -6,6 +6,11 @@ from pathlib import Path
 
 from .models import Diagnostic, MMOFile, ParsedLine, Severity, ValidationResult
 from .parser import parse_mmo
+from .profiles import (
+    ProfileStatus,
+    detect_profile,
+    has_mixed_item_layout,
+)
 from .spec import (
     COMMENT_FIELDS,
     DOCUMENT_FIELDS,
@@ -13,14 +18,12 @@ from .spec import (
     EXPECTED_SIGNATURE,
     EXPECTED_VERSION,
     HEADER_FIELDS,
-    ITEM_FIELDS,
+    LEGACY_ITEM_FIELDS,
     LEGACY_ITEM_FIELD_COUNT,
+    PRODUCTION_ITEM_FIELDS,
     PRODUCTION_ITEM_FIELD_COUNT,
     FieldSpec,
     FieldType,
-    classify_item_layout,
-    item_layouts_compatible,
-    supported_semantic_layout,
 )
 
 
@@ -268,8 +271,17 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
             section="DOCUMENT",
             value="18/24",
         )
-    item_rows = [item.fields for item in mmo.items]
-    if not item_layouts_compatible(item_rows):
+
+    profile_match = detect_profile(mmo)
+    semantic_layout_supported = profile_match.status != ProfileStatus.UNSUPPORTED
+    item_specs = (
+        profile_match.profile.item_fields
+        if profile_match.profile is not None
+        else LEGACY_ITEM_FIELDS if profile_match.status == ProfileStatus.AMBIGUOUS
+        else None
+    )
+
+    if has_mixed_item_layout(mmo):
         _add(
             diags,
             Severity.ERROR,
@@ -278,10 +290,21 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
             section="ITEM",
         )
 
-    semantic_layout_supported = supported_semantic_layout(
-        mmo.document.fields if mmo.document else None,
-        item_rows,
-    )
+    if profile_match.status == ProfileStatus.SUPPORTED and profile_match.profile:
+        _add(
+            diags,
+            Severity.INFO,
+            "MMO_PROFILE_DETECTED",
+            f"Профіль: {profile_match.profile.label}.",
+            value=profile_match.profile.key,
+        )
+    elif profile_match.status == ProfileStatus.AMBIGUOUS:
+        _add(
+            diags,
+            Severity.INFO,
+            "MMO_PROFILE_AMBIGUOUS",
+            profile_match.reason,
+        )
 
     if mmo.document is None:
         _add(
@@ -450,7 +473,8 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
         if not semantic_layout_supported:
             continue
 
-        _validate_fields(diags, item, ITEM_FIELDS, "ITEM", item_index=item_index)
+        assert item_specs is not None
+        _validate_fields(diags, item, item_specs, "ITEM", item_index=item_index)
 
         if len(f) >= 2 and not f[1].strip():
             _add(
@@ -462,7 +486,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                 section="ITEM",
                 item_index=item_index,
                 field_index=2,
-                field_name=ITEM_FIELDS[1].name,
+                field_name=item_specs[1].name if item_specs else "Найменування товару",
             )
 
         if sync_method == "1" and len(f) >= 1 and not f[0].strip():
@@ -475,7 +499,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                 section="ITEM",
                 item_index=item_index,
                 field_index=1,
-                field_name=ITEM_FIELDS[0].name,
+                field_name=item_specs[0].name if item_specs else "ID товару",
             )
         elif sync_method == "2":
             if len(f) >= 1 and not f[0].strip():
@@ -488,7 +512,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     section="ITEM",
                     item_index=item_index,
                     field_index=1,
-                    field_name=ITEM_FIELDS[0].name,
+                    field_name=item_specs[0].name if item_specs else "ID товару",
                 )
             if len(f) >= 3 and not f[2].strip():
                 _add(
@@ -500,7 +524,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     section="ITEM",
                     item_index=item_index,
                     field_index=3,
-                    field_name=ITEM_FIELDS[2].name,
+                    field_name=item_specs[2].name if item_specs else "ID виробника",
                 )
         elif sync_method == "3" and len(f) >= 5:
             external_id = f[4].strip()
@@ -514,7 +538,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     section="ITEM",
                     item_index=item_index,
                     field_index=5,
-                    field_name=ITEM_FIELDS[4].name,
+                    field_name=item_specs[4].name if item_specs else "ID зовнішній",
                 )
             elif external_id in morion_ids:
                 _add(
@@ -526,7 +550,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                     section="ITEM",
                     item_index=item_index,
                     field_index=5,
-                    field_name=ITEM_FIELDS[4].name,
+                    field_name=item_specs[4].name if item_specs else "ID зовнішній",
                     value=external_id,
                 )
             else:
@@ -563,7 +587,7 @@ def validate_mmo(mmo: MMOFile) -> ValidationResult:
                         section="ITEM",
                         item_index=item_index,
                         field_index=21,
-                        field_name=ITEM_FIELDS[20].name,
+                        field_name=item_specs[20].name if item_specs else "Сума відпускна",
                         value=f[20],
                     )
 
