@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Sequence
 
 
 class FieldType(str, Enum):
@@ -51,9 +50,7 @@ COMMENT_FIELDS = (
     FieldSpec("Коментар", FieldType.STRING, 200),
 )
 
-LEGACY_ITEM_FIELD_COUNT = 21
-
-ITEM_FIELDS = (
+LEGACY_ITEM_FIELDS = (
     FieldSpec("ID товару", FieldType.STRING, 20),
     FieldSpec("Найменування товару", FieldType.STRING, 100),
     FieldSpec("ID виробника", FieldType.STRING, 20),
@@ -75,6 +72,9 @@ ITEM_FIELDS = (
     FieldSpec("% націнки постачальника", FieldType.NUMBER, 6, 2),
     FieldSpec("Ціна відпускна", FieldType.NUMBER, 16, 4),
     FieldSpec("Сума відпускна", FieldType.NUMBER, 16, 4),
+)
+
+PRODUCTION_ITEM_FIELDS = LEGACY_ITEM_FIELDS + (
     FieldSpec(
         "Код УКТ ЗЕД",
         FieldType.STRING,
@@ -83,53 +83,11 @@ ITEM_FIELDS = (
     ),
 )
 
-PRODUCTION_ITEM_FIELD_COUNT = len(ITEM_FIELDS)
+# Compatibility alias for code that expects the richest confirmed item schema.
+ITEM_FIELDS = PRODUCTION_ITEM_FIELDS
 
-ITEM_LAYOUT_LEGACY = "legacy"
-ITEM_LAYOUT_PRODUCTION = "production"
-ITEM_LAYOUT_AMBIGUOUS = "ambiguous"
-
-
-def classify_item_layout(fields: Sequence[str]) -> str | None:
-    """Classify only structurally confirmed item layouts.
-
-    A 22-field row ending in an empty field is ambiguous: it may be a legacy
-    21-field row with one terminal TAB or a production 22-field row whose
-    UKTZED value is empty. It is accepted structurally but does not by itself
-    decide the document-wide item profile.
-    """
-    actual = len(fields)
-    if actual == LEGACY_ITEM_FIELD_COUNT:
-        return ITEM_LAYOUT_LEGACY
-    if actual == PRODUCTION_ITEM_FIELD_COUNT:
-        if fields[-1] == "":
-            return ITEM_LAYOUT_AMBIGUOUS
-        return ITEM_LAYOUT_PRODUCTION
-    if actual == PRODUCTION_ITEM_FIELD_COUNT + 1 and fields[-1] == "":
-        return ITEM_LAYOUT_PRODUCTION
-    return None
-
-
-def item_layouts_compatible(rows: Sequence[Sequence[str]]) -> bool:
-    strong = {
-        layout
-        for fields in rows
-        if (layout := classify_item_layout(fields))
-        in {ITEM_LAYOUT_LEGACY, ITEM_LAYOUT_PRODUCTION}
-    }
-    return len(strong) <= 1
-
-
-def supported_semantic_layout(
-    document_fields: Sequence[str] | None,
-    item_rows: Sequence[Sequence[str]],
-) -> bool:
-    if document_fields is None or len(document_fields) != len(DOCUMENT_FIELDS):
-        return False
-    if any(classify_item_layout(fields) is None for fields in item_rows):
-        return False
-    return item_layouts_compatible(item_rows)
-
+LEGACY_ITEM_FIELD_COUNT = len(LEGACY_ITEM_FIELDS)
+PRODUCTION_ITEM_FIELD_COUNT = len(PRODUCTION_ITEM_FIELDS)
 
 EXPECTED_SIGNATURE = "РАСХОДНАЯ_НАКЛАДНАЯ"
 EXPECTED_VERSION = "версия_3"
