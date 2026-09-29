@@ -18,7 +18,8 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - preserve empty and trailing TAB fields as RAW evidence;
 - parse 4 MMO sections;
 - support the documented legacy `4 / 17 / 1 / 21` contract;
-- support the observed production v3 item extension with field 22 = `Код УКТ ЗЕД`;\n- support the extended production v3 profile with Document field 18, GTIN in Item field 5, Morion code in Item field 22, UKTZED in Item field 23, and terminal TAB as physical field 24;
+- support the observed production v3 item extension with field 22 = `Код УКТ ЗЕД`;
+- support the extended production v3 profile with Document field 18, GTIN in Item field 5, Morion code in Item field 22, UKTZED in Item field 23, and terminal TAB as physical field 24;
 - accept one terminal empty TAB field for observed production Header/Item records without discarding it from RAW;
 - treat whitespace-only numeric values as empty;
 - validate signature/version, dates and numbers;
