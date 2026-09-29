@@ -231,3 +231,28 @@ MMO Viewer therefore validates the shared 21-field semantics but does not infer 
 ### Unsupported layouts
 
 The problematic 18/24 sample remains `UNSUPPORTED`. The detector does not register it as a profile. Structural diagnostics and RAW evidence remain available, while profile-specific semantics stay isolated.
+
+
+## Full Items projection (MMO-3.1)
+
+The `Товари` tab is a presentation layer over the resolved format profile; it does not define new format semantics.
+
+For `SUPPORTED` profiles:
+
+- the operational columns are shown first: Morion ID, UKTZED (when defined by the profile), product, unit, quantity, price and amount;
+- every other semantic ITEM field from the matched profile is also shown once, labeled as `Fxx · <field name>`;
+- the table uses horizontal scrolling instead of dropping fields;
+- a physical terminal TAB remains RAW evidence and is not promoted to a semantic column.
+
+For `AMBIGUOUS` layouts:
+
+- only semantics shared safely by the confirmed layouts are named;
+- unclassified physical fields are shown generically as `Fxx · RAW`.
+
+For `UNSUPPORTED` layouts:
+
+- no Morion/UKTZED or other business meaning is inferred for unknown positions;
+- all physical ITEM fields are still visible as generic `Fxx · RAW` columns;
+- this preserves inspection capability without weakening semantic isolation.
+
+The RAW tab remains the canonical byte/text evidence view.
