@@ -1,4 +1,4 @@
-from mmo_viewer.core.item_projection import build_item_view_columns, item_column_value
+from mmo_viewer.core.item_projection import (\n    build_item_view_columns,\n    item_column_value,\n    split_item_view_columns,\n)
 from mmo_viewer.core.parser import parse_mmo_bytes
 
 
@@ -98,3 +98,36 @@ def test_unsupported_layout_exposes_all_physical_fields_only_as_raw():
     assert {column.field_index for column in raw_columns} == set(range(1, 25))
     assert raw_columns[-1].label == "F24 · RAW"
     assert item_column_value(mmo.items[0].fields, raw_columns[-1]) == ""
+
+
+def test_split_keeps_operational_columns_frozen_and_detail_complete():
+    mmo = _mmo(_item(22, terminal_tab=True))
+    operational, detail = split_item_view_columns(mmo)
+
+    assert [column.key for column in operational] == [
+        "morion",
+        "uktzed",
+        "product",
+        "unit",
+        "qty",
+        "price",
+        "total",
+    ]
+
+    operational_indexes = {
+        column.field_index for column in operational if column.field_index
+    }
+    detail_indexes = {
+        column.field_index for column in detail if column.field_index
+    }
+    assert operational_indexes.isdisjoint(detail_indexes)
+    assert operational_indexes | detail_indexes == set(range(1, 23))
+
+
+def test_split_unsupported_keeps_operational_semantics_blank_and_all_raw_on_right():
+    mmo = _mmo(_item(23, terminal_tab=True), document=_document("extra"))
+    operational, detail = split_item_view_columns(mmo)
+
+    assert [column.field_index for column in operational] == [None] * 7
+    assert all(not column.semantic for column in detail)
+    assert {column.field_index for column in detail} == set(range(1, 25))
