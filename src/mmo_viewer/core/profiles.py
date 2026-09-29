@@ -68,7 +68,7 @@ def _header_supported(mmo: MMOFile) -> bool:
     )
 
 
-def _item_shape(fields: list[str]) -> str | None:
+def item_shape(fields: list[str]) -> str | None:
     actual = len(fields)
     if actual == len(LEGACY_ITEM_FIELDS):
         return "legacy"
@@ -80,6 +80,15 @@ def _item_shape(fields: list[str]) -> str | None:
         return "production"
     return None
 
+
+
+def has_mixed_item_layout(mmo: MMOFile) -> bool:
+    strong = {
+        shape
+        for item in mmo.items
+        if (shape := item_shape(item.fields)) in {"legacy", "production"}
+    }
+    return len(strong) > 1
 
 def detect_profile(mmo: MMOFile) -> ProfileMatch:
     if not _header_supported(mmo):
@@ -104,7 +113,7 @@ def detect_profile(mmo: MMOFile) -> ProfileMatch:
             "No ITEM rows are available to select a confirmed item profile.",
         )
 
-    shapes = [_item_shape(item.fields) for item in mmo.items]
+    shapes = [item_shape(item.fields) for item in mmo.items]
     if any(shape is None for shape in shapes):
         return ProfileMatch(
             ProfileStatus.UNSUPPORTED,
