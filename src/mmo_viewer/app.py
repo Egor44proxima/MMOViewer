@@ -1,5 +1,4 @@
 from __future__ import annotations
-from mmo_viewer.ui.main_window import MainWindow
 
 import sys
 from pathlib import Path
