@@ -25,7 +25,8 @@ Read-only desktop previewer and validator for ANR `*.MMO` electronic invoices.
 - report documented legacy width overruns as warnings rather than hard structural errors;
 - validate line totals and VAT-aware document totals;
 - tabs: `Накладна` / `Товари` / `Діагностика` / `RAW`;
-- show the operational columns first in the Items table, then expose every remaining confirmed ITEM field with horizontal scrolling;\n- for unsupported layouts, show all physical ITEM fields only as generic `Fxx · RAW` columns without assigning business semantics;
+- show the operational columns first in the Items table, then expose every remaining confirmed ITEM field with horizontal scrolling;
+- for unsupported layouts, show all physical ITEM fields only as generic `Fxx · RAW` columns without assigning business semantics;
 - explicitly reject the observed problematic `DOCUMENT=18 / ITEM=24` layout as an unconfirmed format variant;
 - run profile-specific field, Morion/UKTZED and totals semantics only for a structurally supported document-wide layout;
 - reject mixed legacy/production ITEM layouts within one document;
